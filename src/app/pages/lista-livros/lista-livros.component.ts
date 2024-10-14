@@ -1,7 +1,18 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { HttpClientModule } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EMPTY, catchError, debounceTime, distinctUntilChanged, filter, map, switchMap, tap, throwError } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  map,
+  switchMap,
+  tap,
+  throwError
+} from 'rxjs';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { LivrosResultado, Item } from '../../models/interfaces';
@@ -24,12 +35,20 @@ const PAUSA = 300;
   templateUrl: './lista-livros.component.html',
   styleUrl: './lista-livros.component.css'
 })
-export class ListaLivrosComponent {
+export class ListaLivrosComponent implements AfterViewInit {
   campoBusca = new FormControl();
   mensagemErro = ''
   livrosResultado!: LivrosResultado;
+  @ViewChild('campoBuscaElement') campoBuscaElement!: ElementRef;
 
-  constructor(private service: LivroService) { }
+  constructor(
+    private service: LivroService,
+    private liveAnnouncer: LiveAnnouncer
+  ) { }
+
+  ngAfterViewInit(): void {
+    this.campoBuscaElement.nativeElement.focus();
+  }
 
   livrosEncontrados$ = this.campoBusca.valueChanges.pipe(
     debounceTime(PAUSA),
@@ -44,6 +63,7 @@ export class ListaLivrosComponent {
     }),
     tap((resultado) => {
       this.livrosResultado = resultado;
+      this.liveAnnouncer.announce(`${this.livrosResultado.totalItems} resultados encontrados`);
     }),
     map((resultado) => resultado.items ?? []),
     map((items) => this.livrosResultadoParaLivros(items)),
